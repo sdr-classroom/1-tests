@@ -316,3 +316,5 @@ def run_all_tests(project_dir):
     run_test_case(logger, test_case17)
 
     logger.print_logs()
+
+run_all_tests(project_fullname)
