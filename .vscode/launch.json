@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "run_tests.py",
-            "args": ["/Users/olemer/Documents/Code/HEIG-VD/SDR23F/lab1"],
+            "args": ["/Users/olemer/code/heig/sdr23f/labs/2/2-distributed-debt-manager-submissions/2-distributed-debt-manager-peronetti2/src"],
             "console": "integratedTerminal",
             "justMyCode": true
         }
