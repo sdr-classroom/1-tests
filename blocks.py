@@ -212,7 +212,11 @@ def assert_graph_is_simplified_block(assert_equivalence=True):
 
 
 def wait_block(duration):
-    return CommandBlock(pre=lambda: time.sleep(duration))
+    def wait():
+        d = duration * 1
+        log(f"Waiting for {d} seconds")
+        time.sleep(d)
+    return CommandBlock(pre=wait)
 
 
 

@@ -10,7 +10,7 @@ def test_case2_1_0(interface):
                            [2, 0, 0],
                            [3, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -18,6 +18,7 @@ def test_case2_1_0(interface):
     interface.join_client('user0', 3333)
 
     interface.run_command_blocks(
+        wait_block(1),
         clear_block('user0', [-5, 2, 3]),
         wait_block(1),
         get_debts_graph_block('user0', interface.get_users()),
@@ -34,7 +35,7 @@ def test_case2_1_1(interface):
                            [2, 0, 0],
                            [3, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -58,7 +59,7 @@ def test_case2_1_2(interface):
                            [0, 0, 0],
                            [3, 2, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()

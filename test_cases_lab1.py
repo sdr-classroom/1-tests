@@ -11,7 +11,7 @@ def test_case1(interface):
                            [0, 0, 0],
                            [0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -35,7 +35,7 @@ def test_case2(interface):
                            [0, 0, 0],
                            [0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -59,7 +59,7 @@ def test_case3(interface):
                            [0, 0, 0],
                            [0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -84,7 +84,7 @@ def test_case4(interface):
                            [0, 0, 0],
                            [0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -108,7 +108,7 @@ def test_case5(interface):
                            [0, 0, 0],
                            [0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -117,6 +117,7 @@ def test_case5(interface):
     interface.join_client('user1', 3333)
 
     interface.run_command_blocks(
+        wait_block(1),
         pay_block('user0', 10, ['user1']),
         pay_block('user1', 10, ['user0']),
         wait_block(1),
@@ -134,7 +135,7 @@ def test_case6(interface):
                            [0, 0, 0],
                            [0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -160,7 +161,7 @@ def test_case7(interface):
                            [0, 0, 0],
                            [0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -190,7 +191,7 @@ def test_case8(interface):
                            [0, 0, 0],
                            [0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -223,7 +224,7 @@ def test_case9(interface):
                            [0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -262,7 +263,7 @@ def test_case10(interface):
                            [0, 0, 10],
                            [0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -286,7 +287,7 @@ def test_case11(interface):
                            [0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -323,7 +324,7 @@ def test_case12(interface):
                            [0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -345,7 +346,7 @@ def test_case13(interface):
                            [0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -391,7 +392,7 @@ def test_case14(interface):
                            [0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -422,7 +423,7 @@ def test_case15(interface):
                            [0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -453,7 +454,7 @@ def test_case16(interface):
                            [0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()
@@ -483,7 +484,7 @@ def test_case17(interface):
                            [0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0]])
 
-    interface.define_servers([3333])
+    interface.define_servers([3333, 3334])
     interface.start_all_servers()
 
     interface.init_context()

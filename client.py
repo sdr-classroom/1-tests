@@ -23,8 +23,11 @@ class Client:
         self.subprocess = subprocess.Popen(cmd,
                             stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
                             shell=True,
                             cwd=self.cwd)
+        os.set_blocking(self.subprocess.stdout.fileno(), False)
+        
         log(f'Client {self.username} joined, waiting...')
         # time.sleep(0.7)
 
