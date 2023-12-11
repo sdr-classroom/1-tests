@@ -209,6 +209,11 @@ class TestCaseInterface:
                 self.name, port, ports, debug, get_working_dir())
 
     def start_all_servers(self):
+        wait_block(1).pre()
+        for server in self.servers.values():
+            port = server.port
+            os.system(f'lsof -t -i:{port} | xargs kill')
+            log(f"Killed anything listening on {port}")
         for server in self.servers.values():
             server.start(self.graph)
 

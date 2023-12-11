@@ -46,6 +46,8 @@ class Server:
             self.proc = None
             if self.toFile and self.stdout:
                 self.stdout.close()
+            os.system(f'lsof -t -i:{self.port} | xargs kill')
+            log(f"Killed anything listening on {self.port}")
         else:
             log("Server not running")
 
