@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "run_tests.py",
-            "args": ["/Users/olemer/code/heig/sdr23f/labs/2/2-distributed-debt-manager-submissions/2-distributed-debt-manager-peronetti2/src"],
+            "args": ["PATH_TO_YOUR_REPO_ROOT"],
             "console": "integratedTerminal",
             "justMyCode": true
         }
