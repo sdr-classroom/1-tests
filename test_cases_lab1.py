@@ -20,6 +20,7 @@ def test_case1(interface):
     interface.join_client('user1', 3333)
 
     interface.run_command_blocks(
+        wait_block(1),
         pay_block('user1', 10, ['user0']),
         wait_block(1),
         assert_debts_equal_constant_block('user0', 'user0', 'user1', 10),

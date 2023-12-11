@@ -209,13 +209,15 @@ class TestCaseInterface:
                 self.name, port, ports, debug, get_working_dir())
 
     def start_all_servers(self):
-        wait_block(1).pre()
+        wait_block(0.5).pre()
         for server in self.servers.values():
             port = server.port
             os.system(f'lsof -t -i:{port} | xargs kill')
             log(f"Killed anything listening on {port}")
+        wait_block(0.5).pre()
         for server in self.servers.values():
             server.start(self.graph)
+        wait_block(1).pre()
 
     def start_server(self, port):
         if (not port in self.servers):
@@ -397,6 +399,12 @@ class TestCaseInterface:
 def run_test_case(logger, test_case):
     print(f"====================================================================================")
     print(f"Running test case {test_case.__name__}...")
+
+    # Run kill $(ps aux | grep heig/sdr23f | grep -v grep | awk '{print $2}')
+    print(f"Killing any running processes related to debt manager...")
+    os.system(f'kill $(ps aux | grep 2-distributed-debt-manager-submissions | grep -v run_test | grep -v grep | awk \'{{print $2}}\')')
+
+    wait_block(1).pre()
 
     name = test_case.__name__
 

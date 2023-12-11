@@ -35,8 +35,9 @@ class Server:
             print(f"Starting server with pipe to {self.stdout.name}")
             # TODO for some reason, the output does not get logged to the output file.
             srv_proc = subprocess.Popen(srv_cmd, cwd=self.cwd, stdout=self.stdout, stderr=subprocess.STDOUT)
-        log("Server started, waiting...")
-        time.sleep(1)
+        log(f"Server {self.port} started")
+        # log("Server started, waiting...")
+        # time.sleep(1)
         return srv_proc
     
     def stop(self):
