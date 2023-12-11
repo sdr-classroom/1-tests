@@ -26,7 +26,7 @@ class Client:
                             shell=True,
                             cwd=self.cwd)
         log(f'Client {self.username} joined, waiting...')
-        time.sleep(0.7)
+        # time.sleep(0.7)
 
     def exit(self):
         if not self.subprocess:

@@ -12,8 +12,12 @@ class Server:
         self.port = port
         self.ports = ports
         self.debug = debug
+        self.toFile = False
         self.proc = None
         self.cwd = cwd
+        if not debug and self.toFile :
+            stdout_filename = os.path.join(cwd, testcase_name, f"stdout_{self.port}.txt")
+            self.stdout = open(stdout_filename, 'w+')
 
     def start(self, graph):
         config_filename = f"config_{self.name}.json"
@@ -25,7 +29,12 @@ class Server:
         log(f"Killed anything listening on {self.port}")
         # srv_cmd = f"go run -race {server_dir} {config_filename}".split()
         srv_cmd = f"{server_full_executable(self.cwd)} {config_filename}".split()
-        srv_proc = subprocess.Popen(srv_cmd, cwd=self.cwd)
+        if self.debug or not self.toFile:
+            srv_proc = subprocess.Popen(srv_cmd, cwd=self.cwd)
+        else:
+            print(f"Starting server with pipe to {self.stdout.name}")
+            # TODO for some reason, the output does not get logged to the output file.
+            srv_proc = subprocess.Popen(srv_cmd, cwd=self.cwd, stdout=self.stdout, stderr=subprocess.STDOUT)
         log("Server started, waiting...")
         time.sleep(1)
         return srv_proc
@@ -33,10 +42,23 @@ class Server:
     def stop(self):
         if self.proc:
             self.proc.kill()
-            log("Server stopped")
+            log("Server stopped and stdout file closed")
             self.proc = None
+            if self.toFile and self.stdout:
+                self.stdout.close()
         else:
             log("Server not running")
+
+    def __del__(self):
+        if self.proc:
+            self.proc.kill()
+            print("Server stopped")
+            self.proc = None
+        else:
+            print("Server not running")
+        if self.toFile and self.stdout:
+            print("Server stdout file closed")
+            self.stdout.close()
     
 def server_full_executable(cwd):
     return os.path.join(cwd, "server")

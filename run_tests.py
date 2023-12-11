@@ -9,12 +9,12 @@ import time
 from helpers import get_total_per_user
 from enum import Enum
 
-from log import log, allow_debug_logs, warn, fail
+from log import log, allow_debug_logs, warn, fail, set_log_file
 from outcome import OutcomeLogger
-from test_cases import *
+from test_cases_lab1 import *
+from test_cases_lab2 import *
 from client import Client, client_full_executable
 from server import Server, server_full_executable
-
 
 sleep_speedup = 1
 
@@ -60,7 +60,6 @@ def compile_client():
     compile_script = os.path.join(project_fullname, "compile_client.sh")
     os.system(
         f'cd {project_fullname}; {compile_script} {client_full_executable(get_working_dir())}')
-
 
 
 # def run_command_block(clients, cmd_blocks, block):
@@ -162,8 +161,11 @@ class TestCaseState(Enum):
     SUCCESSFUL = 4
     FAILED = 5
 
+
 class TestCaseInterface:
     def __init__(self, name):
+        global debug
+        
         self.name = name
         self.context = None
         self.graph = {}
@@ -173,6 +175,13 @@ class TestCaseInterface:
         self.all_clients = {}
         self.desc = None
         self.should_skip_output_parsing = False
+        # Create path for the test case
+        self.test_case_dir = os.path.join(get_working_dir(), name)
+        if not debug:
+            if (not os.path.exists(self.test_case_dir)):
+                os.mkdir(self.test_case_dir)
+            if (not debug):
+                set_log_file(os.path.join(self.test_case_dir, "test_logs.txt"))
         # self.state = TestCaseState.INIT
 
     def check_init_complete(self):
@@ -184,7 +193,7 @@ class TestCaseInterface:
             fail("Servers not initialized. Call start_servers() first.")
         return True
 
-    def init_context(self) :
+    def init_context(self):
         expected_total_debts = get_total_per_user(self.graph)
         self.context = {
             "expected_totals": expected_total_debts,
@@ -196,12 +205,13 @@ class TestCaseInterface:
         for port in ports:
             if (port in self.servers):
                 fail(f"Server already started on port {port}")
-            self.servers[port] = Server(self.name, port, ports, debug, get_working_dir())
+            self.servers[port] = Server(
+                self.name, port, ports, debug, get_working_dir())
 
     def start_all_servers(self):
         for server in self.servers.values():
             server.start(self.graph)
-    
+
     def start_server(self, port):
         if (not port in self.servers):
             fail(f"No server defined for port {port}")
@@ -211,11 +221,11 @@ class TestCaseInterface:
         if (port not in self.servers):
             fail(f"No server running on port {port}; just returning.")
         self.servers[port].stop()
-        
+
     def stop_all_servers(self):
         for port in self.servers.keys():
             self.stop_server(port)
-        
+
     def build_graph(self, matrix):
         n = len(matrix)
         self.graph = {}
@@ -228,6 +238,21 @@ class TestCaseInterface:
                 if (matrix[i][j] != 0):
                     self.graph[ui][uj] = matrix[i][j]
         return self.graph
+
+    def build_random_graph(self, user_count):
+        matrix = [[0 for _ in range(user_count)] for _ in range(user_count)]
+        owed_users = random.sample(range(user_count), user_count // 2)
+        owing_users = [i for i in range(user_count) if i not in owed_users]
+
+        for i in range(user_count):
+            for j in range(user_count):
+                has_debt = random.random() < 0.5
+                if i == j or not has_debt:
+                    continue
+                if i in owing_users and j in owed_users:
+                    matrix[i][j] = random.randint(0, 100)
+
+        self.build_graph(matrix)
 
     def get_users(self):
         users = set()
@@ -259,13 +284,13 @@ class TestCaseInterface:
         for client in clients_to_exit:
             self.exit_client(client)
         self.connected_clients.clear()
-    
+
     def describe(self, new_desc):
         self.desc = new_desc
 
     def set_should_skip_output_parsing(self, should_skip):
         self.should_skip_output_parsing = should_skip
-    
+
     def run_command_block(self, block):
         # if (self.state != TestCaseState.RUNNING and self.state != TestCaseState.INIT):
         #     fail("Cannot run command block after test case has finished")
@@ -284,7 +309,8 @@ class TestCaseInterface:
         client = self.get_client(block.username)
         subprocess = client.subprocess
         if (subprocess == None):
-            fail(f"Client {block.username} does not have a subprocess when trying to run a block")
+            fail(
+                f"Client {block.username} does not have a subprocess when trying to run a block")
         for cmd in block.cmds:
             subprocess.stdin.write((cmd + "\n").encode())
             subprocess.stdin.flush()
@@ -296,17 +322,18 @@ class TestCaseInterface:
             username = block.username
             if (username != None):
                 if username not in self.connected_clients:
-                    self.join_client(username)
+                    fail(
+                        f"Client {username} not connected when trying to run a block")
             self.run_command_block(block)
 
     def parse_outputs(self):
         # if (self.state != TestCaseState.RUNNING):
         #     fail("Cannot parse outputs before running command blocks")
-        
+
         if (self.should_skip_output_parsing):
             log("Skipping output parsing because of flag")
             return
-        
+
         log("Parsing outputs...")
         per_client_outputs = {}
         per_client_lines = {}
@@ -324,15 +351,16 @@ class TestCaseInterface:
                 filter(lambda x: x != '', [x.strip() for x in cmd_outputs]))
             per_client_outputs[client.username] = cmd_outputs
 
+        log(f"[{self.name}] {self.desc}")
         for client in self.all_clients.values():
             log(f"{client.username}:")
-            log(f"Input")
+            log(f"\tInput")
             for block in self.command_blocks:
                 if (block.username != client.username):
                     continue
                 for command in block.cmds:
                     log("\t| " + command)
-            log(f"Output")
+            log(f"\tOutput")
             for line in per_client_lines[client.username]:
                 log("\t| " + line)
 
@@ -360,7 +388,9 @@ class TestCaseInterface:
         #     for output in self.context["manual_outputs"]:
         #         log(output)
 
+
 def run_test_case(logger, test_case):
+    print(f"====================================================================================")
     print(f"Running test case {test_case.__name__}...")
 
     name = test_case.__name__
@@ -374,7 +404,6 @@ def run_test_case(logger, test_case):
     # all_clients = {}
 
     # desc = None
-
 
     # def start_servers_wrapper(ports):
     #     nonlocal context
@@ -403,11 +432,10 @@ def run_test_case(logger, test_case):
 
     # def stop_server_wrapper(port, proc_server):
     #     nonlocal srv_procs
-        
+
     #     stop_server(proc_server)
 
     #     srv_procs.pop(port)
-        
 
     # def build_graph(matrix):
     #     nonlocal graph
@@ -421,8 +449,8 @@ def run_test_case(logger, test_case):
     #     return client
 
     # def exit_client_wrapper(client):
-        # connected_clients.pop(client.username)
-        # exit_client(client)
+    # connected_clients.pop(client.username)
+    # exit_client(client)
 
     # def run_command_blocks_wrapper(*blocks):
     #     for block in blocks:
@@ -446,8 +474,10 @@ def run_test_case(logger, test_case):
 
     try:
         interface = TestCaseInterface(name)
-        
+
         test_case(interface)
+
+        interface.run_command_blocks(wait_block(0.5))
 
         time.sleep(2)
 
@@ -476,7 +506,8 @@ def run_test_case(logger, test_case):
         t = type(e)
 
     if (interface.context["manual_outputs"] != []):
-        logger.logManual(interface.name, interface.desc, interface.context["manual_outputs"])
+        logger.logManual(interface.name, interface.desc,
+                         interface.context["manual_outputs"])
 
 
 def run_all_tests(project_dir):
@@ -504,6 +535,23 @@ def run_all_tests(project_dir):
     run_test_case(logger, test_case15)
     run_test_case(logger, test_case16)
     run_test_case(logger, test_case17)
+
+    run_test_case(logger, test_case2_1_0)
+    run_test_case(logger, test_case2_1_1)
+    run_test_case(logger, test_case2_1_2)
+
+    run_test_case(logger, test_case2_2_0)
+    run_test_case(logger, test_case2_2_1)
+
+    run_test_case(logger, test_case2_3_0)
+    run_test_case(logger, test_case2_3_1)
+    run_test_case(logger, test_case2_3_2)
+
+    run_test_case(logger, test_case2_4_0)
+    run_test_case(logger, test_case2_4_1)
+    run_test_case(logger, test_case2_4_2)
+
+    set_log_file(None)
 
     logger.print_logs()
 

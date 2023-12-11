@@ -106,6 +106,19 @@ def pay_block(client, amount, all_benefitors, log_manual=False):
         cmds=[f'pay {amount} for {", ".join(all_benefitors)}'],
         post=lambda outputs, context: change_expected_totals(outputs, context))
 
+def clear_block(client, expected_totals, log_manual=False):
+    def change_expected_totals(outputs, context):
+        if log_manual:
+            context["manual_outputs"].append(*outputs)
+            return
+        log(f"{client} clears their debts")
+        context["expected_totals"] = {f"user{i}": expected_totals[i] for i in range(len(expected_totals))}
+        log(f"Expected totals: {context['expected_totals']}")
+
+    return CommandBlock(
+        client,
+        cmds=[f'clear'],
+        post=lambda outputs, context: change_expected_totals(outputs, context))
 
 def get_debts_graph_block(client, users):
     def construct_graph_from_outputs(outputs, context):
@@ -121,6 +134,31 @@ def get_debts_graph_block(client, users):
             outputs, context)
     )
 
+def snapshot_graph_block():
+    def snapshot_graph(outputs, context):
+        context["graph_snapshot"] = context["graph"]
+
+    return CommandBlock(
+        None,
+        cmds=[],
+        post=snapshot_graph
+    )
+
+def assert_graph_equals_snapshot_block():
+    def assert_graph_equals_snapshot(outputs, context):
+        for user, other_users in context["graph"].items():
+            for other_user, amount in other_users.items():
+                assert other_user in context["graph_snapshot"][user], f"User {user} has a debt to {other_user}, but this debt was not present in the previous snapshot of the graph"
+                assert math.isclose(
+                    amount, context["graph_snapshot"][user][other_user], abs_tol=0.001), f"User {user} has a debt of {amount} to {other_user}, but this debt was {context['graph_snapshot'][user][other_user]} in the previous snapshot of the graph"
+            assert len(other_users) == len(context["graph_snapshot"][user]), f"User {user} has a different number of debts than in the previous snapshot of the graph"
+        assert len(context["graph"]) == len(context["graph_snapshot"]), f"The graph has a different number of users than in the previous snapshot of the graph"
+
+    return CommandBlock(
+        None,
+        cmds=[],
+        post=assert_graph_equals_snapshot
+    )
 
 
 def wrong_command_block(client, command, log_for_manual=False):
@@ -134,7 +172,7 @@ def wrong_command_block(client, command, log_for_manual=False):
         post=post
     )
 
-def assert_graph_is_simplified_block():
+def assert_graph_is_simplified_block(assert_equivalence=True):
     # Test that no user is due and owed money
     # Test that the total number of edges is less than the total number of users
     def assert_graph_is_simplified(context):
@@ -154,7 +192,8 @@ def assert_graph_is_simplified_block():
         for owing_user in owing_users:
             assert owing_user not in owed_users, f"User {owing_user} is both owing and owed money"
 
-        assert_graph_is_equivalent(context)
+        if assert_equivalence:
+            assert_graph_is_equivalent(context)
 
     def assert_graph_is_equivalent(context):
         actual_graph = context["graph"]
