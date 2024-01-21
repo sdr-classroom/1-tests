@@ -12,8 +12,13 @@ class Client:
         self.subprocess = None
         self.port = port
         self.cwd = cwd
+        self.exited = True
 
     def join(self):
+        # warn(f"Joining client {self.username}.")
+        
+        self.exited = False
+        
         if self.subprocess:
             fail("Client already joined")
         
@@ -32,11 +37,20 @@ class Client:
         # time.sleep(0.7)
 
     def exit(self):
+        # warn(f"Exiting client {self.username}.")
+
+        if self.exited:
+            warn(f"Client {self.username} already exited when trying to exit it.")
+            return
+        self.exited = True
         if not self.subprocess:
             fail("Client not joined when trying to exit")
         subprocess = self.subprocess
         subprocess.stdin.write('exit\n'.encode())
-        subprocess.stdin.flush()
+        try:
+            subprocess.stdin.flush()
+        except BrokenPipeError:
+            warn(f"Broken pipe error occurred when trying to flush the stdin of client {self.username} right before exiting it.")
         log(f'client {self.username} exited, killing it...')
         # time.sleep(0.1 * sleep_speedup)
         subprocess.kill()

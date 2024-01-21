@@ -214,7 +214,7 @@ def assert_graph_is_simplified_block(assert_equivalence=True):
 def wait_block(duration):
     def wait():
         d = duration * 1
-        log(f"Waiting for {d} seconds")
+        # log(f"Waiting for {d} seconds")
         time.sleep(d)
     return CommandBlock(pre=wait)
 
@@ -241,4 +241,118 @@ def get_user_debts_block(client, user=None, log_for_manual=False):
         client,
         cmds=[command],
         post=post
+    )
+
+'''Executes the `server` command on the given client and verifies that the output is as expected.'''
+def assert_server_block(client, expected_server):
+    expected_server = f"{expected_server}"
+    def assert_server(output, context):
+        parts = output.strip().split(':')
+        if len(parts) > 1:
+            port = parts[len(parts)-1]
+        else:
+            port = parts[0]
+        assert port == expected_server, f"Expected server {expected_server}, but got {port}"
+
+    return CommandBlock(
+        client,
+        cmds=['server'],
+        post=lambda outputs, context: assert_server(outputs[0], context)
+    )
+
+def crash_server_block(server):
+    return CommandBlock(pre=lambda: server.crash())
+
+def get_server_block(client):
+    def get_server(output, context):
+        if "server" not in context:
+            context["server"] = {}
+        parts = output.strip().split(':')
+        if len(parts) > 1:
+            port = parts[len(parts)-1]
+        else:
+            port = parts[0]
+        context["server"].update({client: port})
+
+    return CommandBlock(
+        client,
+        cmds=['server'],
+        post=lambda outputs, context: get_server(outputs[0], context)
+    )
+
+'''Must be run after `get_server_block` for every client.'''
+def assert_server_load_balanced_block(servers):
+    # load is balanced if no server has more than 1 client more than any other server
+    def assert_load_balanced(outputs, context):
+        if "server" not in context:
+            exit("Server not in context. Are you sure you ran `get_server_block` for every client?")
+        client_servers = context["server"]
+        server_loads = {}
+        for server in servers:
+            server_loads[f"{server.port}"] = 0
+        for client, server in client_servers.items():
+            assert server in server_loads, f"Client {client} seems to be connected to server {server}, but this server is not in the list of servers that are expected to be running: {[s.port for s in servers]}"
+            server_loads[server] += 1
+        max_count = max(server_loads.values())
+        min_count = min(server_loads.values())
+        # print(f"Server counts: {server_counts}, min count: {min_count}, max count: {max_count}")
+        assert max_count - min_count <= 1, f"Load is not balanced. Max load: {max_count} ; min load: {min_count}.\nServer loads: {server_loads}.\nUser-server assignments: {client_servers}."
+
+    return CommandBlock(
+        None,
+        cmds=[],
+        post=lambda outputs, context: assert_load_balanced(outputs, context)
+    )
+
+'''Must be run after `get_server_block` for every client.'''
+def snapshot_server_loads_block(servers):
+    def snapshot_server_loads(outputs, context):
+        if "server" not in context:
+            exit("Server not in context. Are you sure you ran `get_server_block` for every client?")
+        client_servers = context["server"]
+        server_loads = {}
+        for server in servers:
+            server_loads[f"{server.port}"] = 0
+        for client, server in client_servers.items():
+            assert server in server_loads, f"Client {client} seems to be connected to server {server}, but this server is not in the list of servers that are expected to be running: {[s.port for s in servers]}"
+            server_loads[server] += 1
+        context["server_loads_snapshot"] = server_loads
+
+    return CommandBlock(
+        None,
+        cmds=[],
+        post=snapshot_server_loads
+    )
+
+'''Asserts that the current server load is no worse that the previous snapshot of the server load.'''
+def assert_new_connection_to_least_loaded_block():
+    def assert_new_connection_to_least_loaded(outputs, context):
+        if "server" not in context:
+            exit("Server not in context. Are you sure you ran `get_server_block` for every client?")
+
+        previous_server_loads = context["server_loads_snapshot"]
+        previous_min_load = min(previous_server_loads.values())
+        previous_least_loaded_servers = [server for server, load in previous_server_loads.items() if load == previous_min_load]
+
+        client_servers = context["server"]
+        server_loads = {}
+        for server in previous_server_loads.keys():
+            server_loads[server] = 0
+        for server in client_servers.values():
+            if server not in server_loads:
+                exit(f"Server {server} is not in the list of servers")
+            server_loads[server] += 1
+        current_min_load = min(server_loads.values())
+        # print(f"Server loads: {server_loads}")
+        current_least_loaded_servers = [server for server, load in server_loads.items() if load == current_min_load]
+
+        # print(f"Previous min load: {previous_min_load}, current min load: {current_min_load} ; previous least loaded servers: {previous_least_loaded_servers}, current least loaded servers: {current_least_loaded_servers}")
+
+        assert current_min_load >= previous_min_load or set(current_least_loaded_servers).issubset(set(previous_least_loaded_servers)), f"New connection was not made to least loaded server. Previous least loaded servers with load {previous_min_load}: {previous_least_loaded_servers}. Current least loaded servers with load {current_min_load}: {current_least_loaded_servers}"
+
+
+    return CommandBlock(
+        None,
+        cmds=[],
+        post=lambda outputs, context: assert_new_connection_to_least_loaded(outputs, context)
     )

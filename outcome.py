@@ -67,10 +67,10 @@ class OutcomeLogger:
         for log in self.logs:
             if isinstance(log, Failure):
                 s += (
-                    f"{bcolors.FAIL}[FAILURE]{bcolors.ENDC} {log.test_name}, {log.test_desc} : {log.msg}") + "\n"
+                    f"{bcolors.FAIL}[FAILURE]{bcolors.ENDC} {log.test_name}, {log.test_desc}\n{log.msg}") + "\n"
             elif isinstance(log, Manual):
                 s += (
-                    f"{bcolors.WARNING}[MANUAL]{bcolors.ENDC} {log.test_name}, {log.test_desc} : {log.outputs}") + "\n"
+                    f"{bcolors.WARNING}[MANUAL]{bcolors.ENDC} {log.test_name}, {log.test_desc}\n{log.outputs}") + "\n"
             else:
                 s += (
                     f"{bcolors.OKGREEN}[SUCCESS]{bcolors.ENDC} {log.test_name}, {log.test_desc}") + "\n"

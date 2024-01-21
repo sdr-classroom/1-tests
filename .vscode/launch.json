@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "run_tests.py",
-            "args": ["PATH_TO_YOUR_REPO_ROOT"],
+            "args": ["PATH_TO_YOUR_REPO_ROOT", "no-debug"],
             "console": "integratedTerminal",
             "justMyCode": true
         }

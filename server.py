@@ -50,7 +50,19 @@ class Server:
             os.system(f'lsof -t -i:{self.port} | xargs kill')
             log(f"Killed anything listening on {self.port}")
         else:
-            log("Server not running")
+            log("Server not running when trying to stop it")
+
+    def crash(self):
+        if self.proc:
+            self.proc.kill()
+            log(f"Server {self.name} crash simulated and stdout file closed")
+            self.proc = None
+            if self.toFile and self.stdout:
+                self.stdout.close()
+            os.system(f'lsof -t -i:{self.port} | xargs kill')
+            log(f"Killed anything listening on {self.port}")
+        else:
+            log("Server not running when trying to crash it")
 
     def __del__(self):
         if self.proc:
@@ -58,7 +70,7 @@ class Server:
             print("Server stopped")
             self.proc = None
         else:
-            print("Server not running")
+            print("Server not running when trying to delete the server object.")
         if self.toFile and self.stdout:
             print("Server stdout file closed")
             self.stdout.close()

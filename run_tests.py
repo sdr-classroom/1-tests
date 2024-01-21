@@ -13,12 +13,13 @@ from log import log, allow_debug_logs, warn, fail, set_log_file
 from outcome import OutcomeLogger
 from test_cases_lab1 import *
 from test_cases_lab2 import *
+from test_cases_lab3 import *
 from client import Client, client_full_executable
 from server import Server, server_full_executable
 
 sleep_speedup = 1
 
-debug = True
+debug = sys.argv[2] == "debug" if len(sys.argv) > 2 else False
 if (debug):
     allow_debug_logs()
 
@@ -166,6 +167,7 @@ class TestCaseInterface:
     def __init__(self, name):
         global debug
         
+        self.num_iterations = 1
         self.name = name
         self.context = None
         self.graph = {}
@@ -200,6 +202,9 @@ class TestCaseInterface:
             "manual_outputs": []
         }
 
+    def run_many_times(self, iterations):
+        self.num_iterations = iterations
+
     def define_servers(self, ports):
         self.servers = {}
         for port in ports:
@@ -232,6 +237,9 @@ class TestCaseInterface:
     def stop_all_servers(self):
         for port in self.servers.keys():
             self.stop_server(port)
+
+    def get_all_servers(self):
+        return list(self.servers.values())
 
     def build_graph(self, matrix):
         n = len(matrix)
@@ -281,6 +289,10 @@ class TestCaseInterface:
 
     def get_client(self, username):
         return self.all_clients[username]
+
+    def exit_client_by_name(self, username):
+        client = self.get_client(username)
+        self.exit_client(client)
 
     def exit_client(self, client):
         client.exit()
@@ -402,118 +414,52 @@ def run_test_case(logger, test_case):
 
     # Run kill $(ps aux | grep heig/sdr23f | grep -v grep | awk '{print $2}')
     print(f"Killing any running processes related to debt manager...")
-    os.system(f'kill $(ps aux | grep 2-distributed-debt-manager-submissions | grep -v run_test | grep -v grep | awk \'{{print $2}}\')')
+    os.system(f'kill $(ps aux | grep 3-elections-submissions | grep -v run_test | grep -v grep | awk \'{{print $2}}\')')
 
     wait_block(1).pre()
 
     name = test_case.__name__
 
-    # port = None
-    # context = None
-    # graph = {}
-    # srv_procs = {}
-    # command_blocks = []
-    # connected_clients = {}
-    # all_clients = {}
+    first_run = True
 
-    # desc = None
-
-    # def start_servers_wrapper(ports):
-    #     nonlocal context
-    #     nonlocal srv_procs
-
-    #     for port in ports:
-    #         if (port in srv_procs):
-    #             warn(f"Server already started on port {port}; just returning the already started one.")
-    #             continue
-
-    #         config_filename = f"config_{name}.json"
-    #         config_fullname = os.path.join(get_working_dir(), config_filename)
-    #         write_config_file(config_fullname, graph, port, ports)
-
-    #         srv_proc = start_server(config_fullname, port)
-
-    #         expected_total_debts = get_total_per_user(graph)
-    #         context = {
-    #             "expected_totals": expected_total_debts,
-    #             "manual_outputs": []
-    #         }
-
-    #         srv_procs[port] = srv_proc
-
-    #     return srv_proc
-
-    # def stop_server_wrapper(port, proc_server):
-    #     nonlocal srv_procs
-
-    #     stop_server(proc_server)
-
-    #     srv_procs.pop(port)
-
-    # def build_graph(matrix):
-    #     nonlocal graph
-    #     graph = matrix_to_graph(matrix)
-    #     return graph
-
-    # def join_client_wrapper(username, port=3333):
-    #     client = join_client(username)
-    #     connected_clients[username] = client
-    #     all_clients[username] = client
-    #     return client
-
-    # def exit_client_wrapper(client):
-    # connected_clients.pop(client.username)
-    # exit_client(client)
-
-    # def run_command_blocks_wrapper(*blocks):
-    #     for block in blocks:
-    #         if (block == None):
-    #             continue
-    #         username = block.username
-    #         if (username != None):
-    #             if username not in connected_clients:
-    #                 join_client_wrapper(username)
-    #         run_command_block(connected_clients, command_blocks, block)
-
-    # def describe(new_desc):
-    #     nonlocal desc
-    #     desc = new_desc
-
-    # should_skip_output_parsing = False
-
-    # def set_should_skip_output_parsing(should_skip):
-    #     nonlocal should_skip_output_parsing
-    #     should_skip_output_parsing = should_skip
+    iterations_left = 1
+    print_iterations = False
 
     try:
-        interface = TestCaseInterface(name)
+        while (iterations_left > 0):
+            interface = TestCaseInterface(name)
 
-        test_case(interface)
+            test_case(interface)
 
-        interface.run_command_blocks(wait_block(0.5))
+            if first_run:
+                iterations_left = interface.num_iterations
+                first_run = False
+                if iterations_left > 1:
+                    print_iterations = True
 
-        time.sleep(2)
+            if print_iterations:
+                print(f"\t{iterations_left} iterations left...")
 
-        interface.exit_all_clients()
+            interface.run_command_blocks(wait_block(0.5))
 
-        # for client in connected_clients.values():
-        #     exit_client(client)
-        # connected_clients.clear()
+            time.sleep(2)
 
-        interface.parse_outputs()
+            interface.exit_all_clients()
 
-        # if (not should_skip_output_parsing):
-        #     parse_outputs(command_blocks, all_clients, context)
+            interface.parse_outputs()
 
-        interface.stop_all_servers()
+            interface.stop_all_servers()
 
-        # for port, srv_proc in srv_procs.items():
-        #     stop_server(srv_proc)
+            iterations_left -= 1
 
         if (interface.context["manual_outputs"] == []):
             logger.logSuccess(interface.name, interface.desc)
     except Exception as e:
-        logger.logFailure(interface.name, interface.desc, repr(e))
+        # Treat AssertionError as a special case
+        if (isinstance(e, AssertionError)):
+            logger.logFailure(interface.name, interface.desc, str(e))
+        else:
+            logger.logFailure(interface.name, interface.desc, repr(e))
         interface.stop_all_servers()
         # Get type of error
         t = type(e)
@@ -531,38 +477,48 @@ def run_all_tests(project_dir):
     compile_server()
     compile_client()
 
-    run_test_case(logger, test_case1)
-    run_test_case(logger, test_case2)
-    run_test_case(logger, test_case3)
-    run_test_case(logger, test_case4)
-    run_test_case(logger, test_case5)
-    run_test_case(logger, test_case6)
-    run_test_case(logger, test_case7)
-    run_test_case(logger, test_case8)
-    run_test_case(logger, test_case9)
-    run_test_case(logger, test_case10)
-    run_test_case(logger, test_case11)
-    run_test_case(logger, test_case12)
-    run_test_case(logger, test_case13)
-    run_test_case(logger, test_case14)
-    run_test_case(logger, test_case15)
-    run_test_case(logger, test_case16)
-    run_test_case(logger, test_case17)
+    # run_test_case(logger, test_case1)
+    # run_test_case(logger, test_case2)
+    # run_test_case(logger, test_case3)
+    # run_test_case(logger, test_case4)
+    # run_test_case(logger, test_case5)
+    # run_test_case(logger, test_case6)
+    # run_test_case(logger, test_case7)
+    # run_test_case(logger, test_case8)
+    # run_test_case(logger, test_case9)
+    # run_test_case(logger, test_case10)
+    # run_test_case(logger, test_case11)
+    # run_test_case(logger, test_case12)
+    # run_test_case(logger, test_case13)
+    # run_test_case(logger, test_case14)
+    # run_test_case(logger, test_case15)
+    # run_test_case(logger, test_case16)
+    # run_test_case(logger, test_case17)
 
-    run_test_case(logger, test_case2_1_0)
-    run_test_case(logger, test_case2_1_1)
-    run_test_case(logger, test_case2_1_2)
+    # run_test_case(logger, test_case2_1_0)
+    # run_test_case(logger, test_case2_1_1)
+    # run_test_case(logger, test_case2_1_2)
 
-    run_test_case(logger, test_case2_2_0)
-    run_test_case(logger, test_case2_2_1)
+    # run_test_case(logger, test_case2_2_0)
+    # run_test_case(logger, test_case2_2_1)
 
-    run_test_case(logger, test_case2_3_0)
-    run_test_case(logger, test_case2_3_1)
-    run_test_case(logger, test_case2_3_2)
+    # run_test_case(logger, test_case2_3_0)
+    # run_test_case(logger, test_case2_3_1)
+    # run_test_case(logger, test_case2_3_2)
 
-    run_test_case(logger, test_case2_4_0)
-    run_test_case(logger, test_case2_4_1)
-    run_test_case(logger, test_case2_4_2)
+    # run_test_case(logger, test_case2_4_0)
+    # run_test_case(logger, test_case2_4_1)
+    # run_test_case(logger, test_case2_4_2)
+
+    run_test_case(logger, test_case3_0_0)
+    run_test_case(logger, test_case3_1_0)
+    run_test_case(logger, test_case3_1_1)
+    
+    run_test_case(logger, test_case3_2_0)
+    
+    run_test_case(logger, test_case3_3_0)
+
+    run_test_case(logger, test_case3_4_0)
 
     set_log_file(None)
 
