@@ -291,7 +291,7 @@ def assert_server_load_balanced_block(servers):
         for server in servers:
             server_loads[f"{server.port}"] = 0
         for client, server in client_servers.items():
-            assert server in server_loads, f"Client {client} seems to be connected to server {server}, but this server is not in the list of servers that are expected to be running: {[s.port for s in servers]}"
+            assert server in server_loads, f"Client {client} seems to be connected to server {server.port}, but this server is not in the list of servers that are expected to be running: {[s.port for s in servers]}"
             server_loads[server] += 1
         max_count = max(server_loads.values())
         min_count = min(server_loads.values())
@@ -314,7 +314,7 @@ def snapshot_server_loads_block(servers):
         for server in servers:
             server_loads[f"{server.port}"] = 0
         for client, server in client_servers.items():
-            assert server in server_loads, f"Client {client} seems to be connected to server {server}, but this server is not in the list of servers that are expected to be running: {[s.port for s in servers]}"
+            assert server in server_loads, f"Client {client} seems to be connected to server {server.port}, but this server is not in the list of servers that are expected to be running: {[s.port for s in servers]}"
             server_loads[server] += 1
         context["server_loads_snapshot"] = server_loads
 

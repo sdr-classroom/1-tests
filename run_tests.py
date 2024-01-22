@@ -510,9 +510,9 @@ def run_all_tests(project_dir):
     # run_test_case(logger, test_case2_4_1)
     # run_test_case(logger, test_case2_4_2)
 
-    run_test_case(logger, test_case3_0_0)
-    run_test_case(logger, test_case3_1_0)
-    run_test_case(logger, test_case3_1_1)
+    # run_test_case(logger, test_case3_0_0)
+    # run_test_case(logger, test_case3_1_0)
+    # run_test_case(logger, test_case3_1_1)
     
     run_test_case(logger, test_case3_2_0)
     

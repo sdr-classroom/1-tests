@@ -38,7 +38,7 @@ class OutcomeLogger:
         self.logs = []
 
     def logFailure(self, name, desc, msg):
-        print(f"{bcolors.FAIL}Test failed:{bcolors.ENDC} {name}, {desc}, {msg}")
+        print(f"{bcolors.FAIL}Test failed:{bcolors.ENDC} {name}, {desc}\n{msg}")
         self.logs.append(Failure(name, desc, msg))
 
     def logSuccess(self, name, desc):

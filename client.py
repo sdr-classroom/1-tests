@@ -23,7 +23,7 @@ class Client:
             fail("Client already joined")
         
         global project_fullname
-        cmd = f"{client_full_executable(self.cwd)} {self.username} localhost:3333"
+        cmd = f"{client_full_executable(self.cwd)} {self.username} 127.0.0.1:{self.port}"
         # f"go run -race {client_dir} {username} localhost:3333",
         self.subprocess = subprocess.Popen(cmd,
                             stdin=subprocess.PIPE,
