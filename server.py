@@ -94,8 +94,11 @@ def write_config_file(filename, graph, port, ports, debug, probe_neighbors = Fal
         f.write(', '.join(users) + '], ')
         if probe_neighbors and len(probe_neighbors) > 0:
             f.write('"neighbors": [')
-            neighs = []
-            for p in probe_neighbors:
-                neighs.append(f'"127.0.0.1:{p}"')
-            f.write(', '.join(neighs) + '], ')
+            all_neighs = []
+            for p in ports:
+                neighs = []
+                for neigh in probe_neighbors[p]:
+                    neighs.append(f"\"127.0.0.1:{neigh}\"")
+                all_neighs.append('[' + ', '.join(neighs) + ']')
+            f.write(', '.join(all_neighs) + '], ')
         f.write('"servers": [' + ', '.join([f'"127.0.0.1:{p}"' for p in ports]) + ']}\n')

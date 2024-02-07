@@ -284,7 +284,7 @@ class TestCaseInterface:
     def start_server(self, port):
         if (not port in self.servers):
             fail(f"No server defined for port {port}")
-        self.servers[port].start(self.graph, self.probe_graph[port])
+        self.servers[port].start(self.graph, self.probe_graph)
 
     def stop_server(self, port):
         if (port not in self.servers):
