@@ -14,6 +14,7 @@ from outcome import OutcomeLogger
 from test_cases_lab1 import *
 from test_cases_lab2 import *
 from test_cases_lab3 import *
+from test_cases_lab4 import *
 from client import Client, client_full_executable
 from server import Server, server_full_executable
 
@@ -213,6 +214,62 @@ class TestCaseInterface:
             self.servers[port] = Server(
                 self.name, port, ports, debug, get_working_dir())
 
+    def define_clique_probe_graph(self):
+        if (len(self.servers) == 0):
+            fail("No servers defined")
+        n = len(self.servers)
+        self.probe_graph = dict()
+        for port in self.servers.keys():
+            self.probe_graph[port] = set()
+            for other_port in self.servers.keys():
+                if (other_port != port):
+                    self.probe_graph[port].add(other_port)
+
+    def define_tree_probe_graph(self):
+        if (len(self.servers) == 0):
+            fail("No servers defined")
+        n = len(self.servers)
+        self.probe_graph = dict()
+        root = random.sample(self.servers.keys(), 1)[0]
+        self.probe_graph[root] = set()
+        remaining_nodes = set(self.servers.keys())
+        remaining_nodes.remove(root)
+        while (len(remaining_nodes) > 0):
+            node = random.sample(remaining_nodes, 1)[0]
+            remaining_nodes.remove(node)
+            parent = random.sample(self.probe_graph.keys(), 1)[0]
+            self.probe_graph[parent].add(node)
+            self.probe_graph[node] = set()
+            self.probe_graph[node].add(parent)
+        
+    def define_random_probe_graph(self):
+        if (len(self.servers) == 0):
+            fail("No servers defined")
+        n = len(self.servers)
+        self.probe_graph = dict()
+        def is_graph_connected():
+            visited = set()
+            def dfs(node):
+                if node not in self.probe_graph:
+                    return
+                visited.add(node)
+                for neighbor in self.probe_graph[node]:
+                    if neighbor not in visited:
+                        dfs(neighbor)
+            dfs(random.sample(self.servers.keys(), 1)[0])
+            return len(visited) == n
+        while (not is_graph_connected()):
+            u = random.sample(self.servers.keys(), 1)[0]
+            v = random.sample(self.servers.keys(), 1)[0]
+            if (u == v):
+                continue
+            if (v not in self.probe_graph):
+                self.probe_graph[v] = set()
+            if (u not in self.probe_graph):
+                self.probe_graph[u] = set()
+            self.probe_graph[u].add(v)
+            self.probe_graph[v].add(u)
+
     def start_all_servers(self):
         wait_block(0.5).pre()
         for server in self.servers.values():
@@ -221,13 +278,13 @@ class TestCaseInterface:
             log(f"Killed anything listening on {port}")
         wait_block(0.5).pre()
         for server in self.servers.values():
-            server.start(self.graph)
+            self.start_server(server.port)
         wait_block(1).pre()
 
     def start_server(self, port):
         if (not port in self.servers):
             fail(f"No server defined for port {port}")
-        self.servers[port].start(self.graph)
+        self.servers[port].start(self.graph, self.probe_graph[port])
 
     def stop_server(self, port):
         if (port not in self.servers):
@@ -514,11 +571,31 @@ def run_all_tests(project_dir):
     # run_test_case(logger, test_case3_1_0)
     # run_test_case(logger, test_case3_1_1)
     
-    run_test_case(logger, test_case3_2_0)
+    # run_test_case(logger, test_case3_2_0)
     
-    run_test_case(logger, test_case3_3_0)
+    # run_test_case(logger, test_case3_3_0)
 
-    run_test_case(logger, test_case3_4_0)
+    # run_test_case(logger, test_case3_4_0)
+
+    run_test_case(logger, test_case4_0_0)
+    run_test_case(logger, test_case4_0_1)
+    run_test_case(logger, test_case4_0_2)
+
+    run_test_case(logger, test_case4_1_0)
+    run_test_case(logger, test_case4_1_1)
+    run_test_case(logger, test_case4_1_2)
+
+    run_test_case(logger, test_case4_2_0)
+    run_test_case(logger, test_case4_2_1)
+    run_test_case(logger, test_case4_2_2)
+
+    run_test_case(logger, test_case4_3_0)
+    run_test_case(logger, test_case4_3_1)
+    run_test_case(logger, test_case4_3_2)
+
+    run_test_case(logger, test_case4_4_0)
+    run_test_case(logger, test_case4_4_1)
+    run_test_case(logger, test_case4_4_2)
 
     set_log_file(None)
 

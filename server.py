@@ -19,10 +19,10 @@ class Server:
             stdout_filename = os.path.join(cwd, testcase_name, f"stdout_{self.port}.txt")
             self.stdout = open(stdout_filename, 'w+')
 
-    def start(self, graph):
+    def start(self, graph, probe_neighbors = False):
         config_filename = f"config_{self.name}.json"
         config_fullname = os.path.join(self.cwd, config_filename)
-        write_config_file(config_fullname, graph, self.port, self.ports, self.debug)
+        write_config_file(config_fullname, graph, self.port, self.ports, self.debug, probe_neighbors)
         
         # use lsof to find the process id of the server listening on the port, then kill it.
         os.system(f'lsof -t -i:{self.port} | xargs kill')
@@ -78,7 +78,7 @@ class Server:
 def server_full_executable(cwd):
     return os.path.join(cwd, "server")
 
-def write_config_file(filename, graph, port, ports, debug):
+def write_config_file(filename, graph, port, ports, debug, probe_neighbors = False):
     with open(filename, 'w') as f:
         debugStr = 'true' if debug else 'false'
         f.write(f'{{"debug": {debugStr}, "port": {port}, "users": [')
@@ -92,4 +92,10 @@ def write_config_file(filename, graph, port, ports, debug):
             user += ', '.join(debts) + ']}'
             users.append(user)
         f.write(', '.join(users) + '], ')
+        if probe_neighbors and len(probe_neighbors) > 0:
+            f.write('"neighbors": [')
+            neighs = []
+            for p in probe_neighbors:
+                neighs.append(f'"127.0.0.1:{p}"')
+            f.write(', '.join(neighs) + '], ')
         f.write('"servers": [' + ', '.join([f'"127.0.0.1:{p}"' for p in ports]) + ']}\n')

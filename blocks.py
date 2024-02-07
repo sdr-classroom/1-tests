@@ -356,3 +356,27 @@ def assert_new_connection_to_least_loaded_block():
         cmds=[],
         post=lambda outputs, context: assert_new_connection_to_least_loaded(outputs, context)
     )
+
+def assert_connected_users_block(client, expected_connected_users, expected_all_users):
+    # `users` output lists all users and has form "<username>: <debt> (online)" or "<username>: <debt>"
+
+    def assert_connected_users(outputs, context):
+        users_lines = outputs[0].strip().split('\n')
+        connected_users_lines = [line for line in users_lines if "(online)" in line]
+        connected_users = [user.split(':')[0] for user in connected_users_lines]
+        assert set(connected_users) == set(expected_connected_users), f"`users` listed {connected_users} as connected, but expected {expected_connected_users}"
+
+    def assert_all_users_listed(outputs, context):
+        users_lines = outputs[0].strip().split('\n')
+        users = [user.split(':')[0] for user in users_lines]
+        assert set(users) == set(expected_all_users), f"`users` listed {users} users, but expected {expected_all_users}"
+
+    def assert_valid_outputs(outputs, context):
+        assert_connected_users(outputs, context)
+        assert_all_users_listed(outputs, context)
+
+    return CommandBlock(
+        client,
+        cmds=['users'],
+        post=assert_valid_outputs
+    )
