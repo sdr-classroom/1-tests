@@ -362,13 +362,13 @@ def assert_connected_users_block(client, expected_connected_users, expected_all_
 
     def assert_connected_users(outputs, context):
         users_lines = outputs[0].strip().split('\n')
-        connected_users_lines = [line for line in users_lines if "(online)" in line]
-        connected_users = [user.split(':')[0] for user in connected_users_lines]
+        connected_users_lines = [line for line in users_lines if "(connected)" in line]
+        connected_users = [user.split(':')[0].strip() for user in connected_users_lines]
         assert set(connected_users) == set(expected_connected_users), f"`users` listed {connected_users} as connected, but expected {expected_connected_users}"
 
     def assert_all_users_listed(outputs, context):
         users_lines = outputs[0].strip().split('\n')
-        users = [user.split(':')[0] for user in users_lines]
+        users = [user.split(':')[0].strip() for user in users_lines]
         assert set(users) == set(expected_all_users), f"`users` listed {users} users, but expected {expected_all_users}"
 
     def assert_valid_outputs(outputs, context):
